@@ -31,6 +31,8 @@ trybuild = "1.0"
 
 [workspace]
 members = ["tests/crate"]
+exclude = ["tests/test-contract-rs"]
+
 
 [package.metadata.docs.rs]
 features = ["raw_value", "unbounded_depth"]
@@ -66,3 +68,6 @@ raw_value = []
 # overflow the stack after deserialization has completed, including, but not
 # limited to, Display and Debug and Drop impls.
 unbounded_depth = []
+
+# Disallow serializing/deserializing floats.
+no_floats = []

@@ -49,7 +49,7 @@ impl Error {
     /// - `Category::Eof` - unexpected end of the input data
     pub fn classify(&self) -> Category {
         match self.err.code {
-            ErrorCode::Message(_) => Category::Data,
+            ErrorCode::Message(_) | ErrorCode::FloatsDisallowed => Category::Data,
             ErrorCode::Io(_) => Category::Io,
             ErrorCode::EofWhileParsingList
             | ErrorCode::EofWhileParsingObject
@@ -252,6 +252,9 @@ pub enum ErrorCode {
 
     /// Encountered nesting of JSON maps and arrays more than 128 layers deep.
     RecursionLimitExceeded,
+
+    /// Encountered float when floats were explicitly disallowed by the `no_floats` feature.
+    FloatsDisallowed,
 }
 
 impl Error {
@@ -329,6 +332,7 @@ impl Display for ErrorCode {
             ErrorCode::TrailingCharacters => f.write_str("trailing characters"),
             ErrorCode::UnexpectedEndOfHexEscape => f.write_str("unexpected end of hex escape"),
             ErrorCode::RecursionLimitExceeded => f.write_str("recursion limit exceeded"),
+            ErrorCode::FloatsDisallowed => f.write_str("floats are disallowed with `no_floats` option"),
         }
     }
 }

@@ -96,6 +96,7 @@ macro_rules! overflow {
 // Not public API. Should be pub(crate).
 #[doc(hidden)]
 pub enum ParserNumber {
+    #[cfg(not(feature = "no_floats"))]
     F64(f64),
     U64(u64),
     I64(i64),
@@ -109,6 +110,7 @@ impl ParserNumber {
         V: de::Visitor<'de>,
     {
         match self {
+            #[cfg(not(feature = "no_floats"))]
             ParserNumber::F64(x) => visitor.visit_f64(x),
             ParserNumber::U64(x) => visitor.visit_u64(x),
             ParserNumber::I64(x) => visitor.visit_i64(x),
@@ -119,6 +121,7 @@ impl ParserNumber {
 
     fn invalid_type(self, exp: &Expected) -> Error {
         match self {
+            #[cfg(not(feature = "no_floats"))]
             ParserNumber::F64(x) => de::Error::invalid_type(Unexpected::Float(x), exp),
             ParserNumber::U64(x) => de::Error::invalid_type(Unexpected::Unsigned(x), exp),
             ParserNumber::I64(x) => de::Error::invalid_type(Unexpected::Signed(x), exp),
@@ -408,11 +411,14 @@ impl<'de, R: Read<'de>> Deserializer<R> {
                             // number as a `u64` until we grow too large. At that point, switch to
                             // parsing the value as a `f64`.
                             if overflow!(res * 10 + digit, u64::max_value()) {
+                                #[cfg(feature = "no_floats")]
+                                return Err(self.error(ErrorCode::FloatsDisallowed));
+                                #[cfg(not(feature = "no_floats"))]
                                 return Ok(ParserNumber::F64(try!(self.parse_long_integer(
-                                    positive,
-                                    res,
-                                    1, // res * 10^1
-                                ))));
+                                        positive,
+                                        res,
+                                        1, // res * 10^1
+                                    ))));
                             }
 
                             res = res * 10 + digit;
@@ -456,7 +462,9 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
     fn parse_number(&mut self, positive: bool, significand: u64) -> Result<ParserNumber> {
         Ok(match try!(self.peek_or_null()) {
+            #[cfg(not(feature = "no_floats"))]
             b'.' => ParserNumber::F64(try!(self.parse_decimal(positive, significand, 0))),
+            #[cfg(not(feature = "no_floats"))]
             b'e' | b'E' => ParserNumber::F64(try!(self.parse_exponent(positive, significand, 0))),
             _ => {
                 if positive {
@@ -466,7 +474,10 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
                     // Convert into a float if we underflow.
                     if neg > 0 {
-                        ParserNumber::F64(-(significand as f64))
+                        #[cfg(not(feature = "no_floats"))]
+                        return Ok(ParserNumber::F64(-(significand as f64)));
+                        #[cfg(feature = "no_floats")]
+                        return Err(self.error(ErrorCode::FloatsDisallowed));
                     } else {
                         ParserNumber::I64(neg)
                     }
