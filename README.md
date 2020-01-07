@@ -1,3 +1,8 @@
+Note, to use serde_json without floats you need to include it into `Cargo.toml` like this:
+```
+serde_json = { git = "https://github.com/nearprotocol/json", rev = "1f5779f3b0bd3d2a4b0b975abc46f3d3fe873331", features = ["no_floats"] }
+```
+
 # Serde JSON &emsp; [![Build Status]][travis] [![Latest Version]][crates.io] [![Rustc Version 1.15+]][rustc]
 
 [Build Status]: https://api.travis-ci.org/serde-rs/json.svg?branch=master
